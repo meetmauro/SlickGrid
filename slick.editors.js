@@ -15,10 +15,70 @@
         "YesNoSelect": YesNoSelectEditor,
         "Checkbox": CheckboxEditor,
         "PercentComplete": PercentCompleteEditor,
-        "LongText": LongTextEditor
+        "LongText": LongTextEditor,
+        "Float": FloatEditor,
+        "Percentage": PercentageEditor,
+        "RowMulti": RowEditor,
+        "ReadOnly": ReadOnlyEditor,
+        "Combo": SelectCellEditor
       }
     }
   });
+
+
+
+  function RowEditor(args) {
+     var theEditor = undefined;
+     var scope = this;
+     
+     this.init = function () {
+        //var data = args.grid.getData();
+        if (args.item.editor === undefined)
+           theEditor = new ReadOnlyEditor(args);
+        else
+           theEditor = new (args.item.editor)(args);
+      };
+
+      this.destroy = function () {
+        theEditor.destroy();
+      };
+
+      this.focus = function () {
+        theEditor.focus();
+      };
+
+      this.getValue = function () {
+        return theEditor.getValue();
+      };
+
+      this.setValue = function (val) {
+        theEditor.setValue(val);
+      };
+
+      this.loadValue = function (item) {
+        theEditor.loadValue(item);
+      };
+
+      this.serializeValue = function () {
+        return theEditor.serializeValue();
+      };
+
+      this.applyValue = function (item, state) {
+        theEditor.applyValue(item,state);
+      };
+
+      this.isValueChanged = function () {
+        return theEditor.isValueChanged();
+      };
+
+      this.validate = function () {
+        return theEditor.validate();
+      };
+
+      this.init();
+  }
+  
+  
 
   function TextEditor(args) {
     var $input;
@@ -89,6 +149,61 @@
     this.init();
   }
 
+
+
+  function ReadOnlyEditor(args) {
+    var $input;
+    var defaultValue;
+    var scope = this;
+
+    this.init = function () {
+      $input = $("<span class='editor-text' />").appendTo(args.container);
+    };
+
+    this.destroy = function () {
+      $input.remove();
+    };
+
+    this.focus = function () { };
+
+    this.getValue = function () {
+      return $input.val();
+    };
+
+    this.setValue = function (val) {
+      $input.val(val);
+    };
+
+    this.loadValue = function (item) {
+      defaultValue = item[args.column.field] || "";
+      $input.val(defaultValue);
+      $input[0].defaultValue = defaultValue;
+      $input.select();
+    };
+
+    this.serializeValue = function () {
+      return $input.val();
+    };
+
+    this.applyValue = function (item, state) {
+      item[args.column.field] = state;
+    };
+
+    this.isValueChanged = function () {
+      return false;
+    };
+
+    this.validate = function () {
+      return {
+        valid: true,
+        msg: null
+      };
+    };
+
+    this.init();
+  }  
+  
+
   function IntegerEditor(args) {
     var $input;
     var defaultValue;
@@ -116,7 +231,8 @@
     };
 
     this.loadValue = function (item) {
-      defaultValue = item[args.column.field];
+      defaultValue = parseInt(item[args.column.field]);
+      if (isNaN(defaultValue)) defaultValue='';
       $input.val(defaultValue);
       $input[0].defaultValue = defaultValue;
       $input.select();
@@ -150,6 +266,141 @@
 
     this.init();
   }
+
+
+  function FloatEditor(args) {
+    var $input;
+    var defaultValue;
+    var scope = this;
+
+    this.init = function () {
+      $input = $("<INPUT type=text class='editor-text' />");
+
+      $input.bind("keydown.nav", function (e) {
+        if (e.keyCode === $.ui.keyCode.LEFT || e.keyCode === $.ui.keyCode.RIGHT) {
+          e.stopImmediatePropagation();
+        }
+      });
+
+      $input.appendTo(args.container);
+      $input.focus().select();
+    };
+
+    this.destroy = function () {
+      $input.remove();
+    };
+
+    this.focus = function () {
+      $input.focus();
+    };
+
+    this.loadValue = function (item) {
+      defaultValue = parseFloat(item[args.column.field]);
+      if (isNaN(defaultValue)) defaultValue='';
+      $input.val(defaultValue);
+      $input[0].defaultValue = defaultValue;
+      $input.select();
+    };
+
+    this.serializeValue = function () {
+      var v = $input.val();
+      if (v == '') return v;
+      return parseFloat(v) || 0.0;
+    };
+
+    this.applyValue = function (item, state) {
+      item[args.column.field] = state;
+    };
+
+    this.isValueChanged = function () {
+      //return (!($input.val() == "" && defaultValue == null)) && ($input.val() != defaultValue);
+      return ($input.val() != defaultValue.toString());
+    };
+
+    this.validate = function () {
+      if (isNaN($input.val())) {
+        return {
+          valid: false,
+          msg: "Please enter a valid float"
+        };
+      }
+
+      return {
+        valid: true,
+        msg: null
+      };
+    };
+
+    this.init();
+  }
+
+
+  function PercentageEditor(args) {
+    var $input;
+    var defaultValue;
+    var scope = this;
+
+    this.init = function () {
+      $input = $("<INPUT type=text class='editor-text' />");
+
+      $input.bind("keydown.nav", function (e) {
+        if (e.keyCode === $.ui.keyCode.LEFT || e.keyCode === $.ui.keyCode.RIGHT) {
+          e.stopImmediatePropagation();
+        }
+      });
+
+      $input.appendTo(args.container);
+      $input.focus().select();
+    };
+
+    this.destroy = function () {
+      $input.remove();
+    };
+
+    this.focus = function () {
+      $input.focus();
+    };
+
+    this.loadValue = function (item) {
+      defaultValue = parseFloat(item[args.column.field]);
+      if (isNaN(defaultValue)) defaultValue=''; else defaultValue += ' %';
+      $input.val(defaultValue);
+      $input[0].defaultValue = defaultValue;
+      $input.select();
+    };
+    this.serializeValue = function () {
+      var v = $input.val();
+      if (v == '') return v;
+      if(v.charAt( v.length-1 ) == '%') return Math.round(parseFloat(v)*10)/1000 || 0.0;
+      return parseFloat(v) || 0.0;
+    };
+
+    this.applyValue = function (item, state) {
+      item[args.column.field] = Math.round(state*1000)/10 + ' %';
+    };
+
+    this.isValueChanged = function () {
+      //return (!($input.val() == "" && defaultValue == null)) && ($input.val() != defaultValue);
+      return ($input.val() != defaultValue.toString());
+    };
+
+    this.validate = function () {
+      if (isNaN(parseFloat($input.val()))) {
+        return {
+          valid: false,
+          msg: "Please enter a valid percentage"
+        };
+      }
+
+      return {
+        valid: true,
+        msg: null
+      };
+    };
+
+    this.init();
+  }
+
 
   function DateEditor(args) {
     var $input;
@@ -236,6 +487,63 @@
     this.init();
   }
 
+
+ function SelectCellEditor(args) {
+        var $select;
+        var defaultValue;
+        var scope = this;
+
+        this.init = function() {
+            var opt = args.column.options;
+            option_str = ""
+            for(i in opt){
+              v = opt[i];
+              option_str += "<OPTION value='"+v.key+"'>"+v.val+"</OPTION>";
+            }
+            $select = $("<SELECT tabIndex='0' class='editor-select'>"+ option_str +"</SELECT>");
+            $select.appendTo(args.container);
+            $select.focus();
+        };
+
+        this.destroy = function() {
+            $select.remove();
+        };
+
+        this.focus = function() {
+            $select.focus();
+        };
+
+        this.loadValue = function(item) {
+            defaultValue = item[args.column.field];
+            $select.val(defaultValue);
+        };
+
+        this.serializeValue = function() {
+            if(args.column.options){
+              return $select.children("option:selected").text();
+            }else{
+              return ($select.val() == "yes");
+            }
+        };
+
+        this.applyValue = function(item,state) {
+            item[args.column.field] = state;
+        };
+
+        this.isValueChanged = function() {
+            return ($select.val() != defaultValue);
+        };
+
+        this.validate = function() {
+            return {
+                valid: true,
+                msg: null
+            };
+        };
+
+        this.init();
+    } 
+    
   function YesNoSelectEditor(args) {
     var $select;
     var defaultValue;
