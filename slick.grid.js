@@ -3339,7 +3339,8 @@ if (typeof Slick === "undefined") {
             // if there previously was text selected on a page (such as selected
             // text in the edit cell just removed),
             // IE can't set focus to anything else correctly
-            if ($.browser.msie) {
+            var ie = !!/msie [\w.]+/.exec( navigator.userAgent.toLowerCase() );
+            if (ie) {
                 clearTextSelection();
             }
 
