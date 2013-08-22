@@ -3232,6 +3232,12 @@ if (typeof Slick === "undefined") {
             }
         }
 
+        function scrollViewportLeft(left) {
+          $viewportScrollContainerX.scrollLeft(left);
+          handleScroll();
+          render();
+        }
+
         function setActiveCellInternal(newCell, editMode) {
             if (activeCellNode !== null) {
                 makeActiveCellNormal();
@@ -4142,6 +4148,7 @@ if (typeof Slick === "undefined") {
             "scrollRowIntoView": scrollRowIntoView,
             "scrollRowToTop": scrollRowToTop,
             "scrollCellIntoView": scrollCellIntoView,
+            "scrollViewportLeft": scrollViewportLeft,
             "getCanvasNode": getCanvasNode,
             "getActiveCanvasNode": getActiveCanvasNode,
             "setActiveCanvasNode": setActiveCanvasNode,
