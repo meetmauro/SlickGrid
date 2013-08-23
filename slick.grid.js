@@ -2600,6 +2600,26 @@ if (typeof Slick === "undefined") {
             }
         }
 
+        function updateRowHeight(newHeight) {
+             if (!stylesheet) {
+                 throw new Error("Cannot find stylesheet.");
+             }
+             options.rowHeight = newHeight;
+             // find and cache column CSS rules
+             var cssRules = (stylesheet.cssRules || stylesheet.rules);
+             var sr = cssRules["slick-row"];
+             var sc = cssRules["slick-cell"];
+             for (var i = 0; i < cssRules.length; i++) {
+                 var selector = cssRules[i].selectorText;
+                 if (selector == "." + uid + " .slick-row" || selector == "." + uid + " .slick-cell") {
+                     cssRules[i].style["height"] = newHeight;
+                 }
+              }
+            updateRowPositions();
+            invalidateAllRows();
+            render();
+        }
+
         function render() {
             if (!initialized) {
                 return;
@@ -4146,6 +4166,7 @@ if (typeof Slick === "undefined") {
             "invalidateAllRows": invalidateAllRows,
             "updateCell": updateCell,
             "updateRow": updateRow,
+            "updateRowHeight": updateRowHeight,
             "getViewport": getVisibleRange,
             "getRenderedRange": getRenderedRange,
             "resizeCanvas": resizeCanvas,
