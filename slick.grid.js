@@ -1913,6 +1913,38 @@ if (typeof Slick === "undefined") {
             }
         }
 
+        //return css to be applied to this row/cell
+        function getCellCSS(row, cell) {
+            var metadata = data.getItemMetadata && data.getItemMetadata(row);
+            var m = columns[cell];
+            var colspan = 1, columnData;
+            if (metadata && metadata.columns) {
+                columnData = metadata.columns[m.id] || metadata.columns[cell];
+                colspan = (columnData && columnData.colspan) || 1;
+                if (colspan === "*") {
+                    colspan = columns.length - cell;
+                }
+            }
+            var d = getDataItem(row);
+            var cellCss = "slick-cell l" + cell + " r" + Math.min(columns.length - 1, cell + colspan - 1)
+                        + (m.cssClass ? " " + m.cssClass : "");
+            if (row === activeRow && cell === activeCell) {
+                cellCss += (" active");
+            }
+
+            if (columnData && columnData.cssClass) {
+                cellCss += " " + columnData.cssClass;
+            }
+
+            // TODO:  merge them together in the setter
+            for (var key in cellCssClasses) {
+                if (cellCssClasses[key][row] && cellCssClasses[key][row][m.id]) {
+                    cellCss += (" " + cellCssClasses[key][row][m.id]);
+                }
+            }
+            return cellCss;
+        }
+
         function appendCellHtml(stringArray, row, cell, colspan, columMetadata) {
             var m = columns[cell];
             var d = getDataItem(row);
@@ -2057,13 +2089,17 @@ if (typeof Slick === "undefined") {
                     d = getDataItem(row),
                     node = cacheEntry.cellNodesByColumnIdx[columnIdx][0];
 
-                if (row === activeRow && columnIdx === activeCell && currentEditor) {
-                    currentEditor.loadValue(d);
-                } else if (d) {
-                    node.innerHTML = getFormatter(row, m)(row, columnIdx, getDataItemValueForColumn(d, m), m, d);
-                } else {
-                    node.innerHTML = "";
+                if (!m.asyncPostRender) {   //leave to post renderers the burder of dealing with inner html
+                    if (row === activeRow && columnIdx === activeCell && currentEditor) {
+                        currentEditor.loadValue(d);
+                    } else if (d) {
+                        node.innerHTML = getFormatter(row, m)(row, columnIdx, getDataItemValueForColumn(d, m), m, d);
+                    } else {
+                        node.innerHTML = "";
+                    }
                 }
+                $(node).removeClass();
+                $(node).addClass( getCellCSS(row,columnIdx))
             }
 
             invalidatePostProcessingResults(row);
@@ -3311,7 +3347,7 @@ if (typeof Slick === "undefined") {
             }
 
             if (activeCellChanged) {
-                setTimeout(scrollActiveCellIntoView, 50);
+                // setTimeout(scrollActiveCellIntoView, 50);
                 trigger(self.onActiveCellChanged, getActiveCell());
             }
         }
