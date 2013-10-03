@@ -31,7 +31,7 @@
   function RowEditor(args) {
      var theEditor = undefined;
      var scope = this;
-     
+
      this.init = function () {
         //var data = args.grid.getData();
         if (args.item.editor === undefined)
@@ -78,8 +78,8 @@
 
       this.init();
   }
-  
-  
+
+
 
   function TextEditor(args) {
     var $input;
@@ -202,8 +202,44 @@
     };
 
     this.init();
-  }  
-  
+  }
+
+function applyModifier(val,mod) {
+  if (!isValidModifier(mod))
+    return mod;
+  var sv = mod.toString();
+  var ope = sv.charAt(0);
+  sv = sv.substr(1);    //remove operation
+  var isPercent = sv.charAt(sv.length-1) === "%";
+  if (isPercent) sv = sv.slice(0,-1);
+  var dv = parseFloat(val);
+  var dsv = parseFloat(sv);
+  switch(ope){
+    case "+":
+      return isPercent ? dv + dv*dsv/100.0 : dv + dsv;
+    break;
+    case "-":
+      return isPercent ? dv - dv*dsv/100.0 : dv - dsv;
+    break;
+    case "*":
+      return dv*dsv;
+    break;
+    case "/":
+      return dv/dsv;
+    break;
+  }
+  return dv;
+}
+
+function isValidModifier(v) {
+  var sv = v.toString();
+  if ("+-*/".indexOf(sv.charAt(0)) < 0) return false;  //no good if it does not start with an operation
+  sv = sv.substr(1);    //remove first char
+  if (sv.indexOf('+')>=0 || sv.indexOf('-')>=0 || sv.indexOf('*')>=0 || sv.indexOf('/')>=0) return false;  //no more signs please.
+  if (sv.charAt(sv.length-1) === '%') sv = sv.slice(0,-1);    //remove also the % char if it is there
+  //what remains must be a number
+  return !isNaN(sv);
+}
 
   function IntegerEditor(args) {
     var $input;
@@ -212,13 +248,12 @@
 
     this.init = function () {
       $input = $("<INPUT type=text class='editor-text' />");
-
       $input.bind("keydown.nav", function (e) {
         if (e.keyCode === $.ui.keyCode.LEFT || e.keyCode === $.ui.keyCode.RIGHT) {
           e.stopImmediatePropagation();
         }
       });
-
+      defaultValue = '';
       $input.appendTo(args.container);
       $input.focus().select();
     };
@@ -240,7 +275,7 @@
     };
 
     this.serializeValue = function () {
-      return parseInt($input.val(), 10) || 0;
+      return parseInt(applyModifier(defaultValue, $input.val()), 10) || 0;
     };
 
     this.applyValue = function (item, state) {
@@ -252,7 +287,7 @@
     };
 
     this.validate = function () {
-      if (isNaN($input.val())) {
+      if (isNaN($input.val()) && !isValidModifier($input.val())) {
         return {
           valid: false,
           msg: "Please enter a valid integer"
@@ -276,13 +311,12 @@
 
     this.init = function () {
       $input = $("<INPUT type=text class='editor-text' />");
-
       $input.bind("keydown.nav", function (e) {
         if (e.keyCode === $.ui.keyCode.LEFT || e.keyCode === $.ui.keyCode.RIGHT) {
           e.stopImmediatePropagation();
         }
       });
-
+      defaultValue = '';
       $input.appendTo(args.container);
       $input.focus().select();
     };
@@ -306,7 +340,7 @@
     this.serializeValue = function () {
       var v = $input.val();
       if (v == '') return v;
-      return parseFloat(v) || 0.0;
+      return parseFloat(applyModifier(defaultValue, v)) || 0.0;
     };
 
     this.applyValue = function (item, state) {
@@ -319,7 +353,7 @@
     };
 
     this.validate = function () {
-      if (isNaN($input.val())) {
+      if (isNaN($input.val()) && !isValidModifier($input.val())) {
         return {
           valid: false,
           msg: "Please enter a valid float"
@@ -343,13 +377,12 @@
 
     this.init = function () {
       $input = $("<INPUT type=text class='editor-text' />");
-
       $input.bind("keydown.nav", function (e) {
         if (e.keyCode === $.ui.keyCode.LEFT || e.keyCode === $.ui.keyCode.RIGHT) {
           e.stopImmediatePropagation();
         }
       });
-
+      defaultValue = '';
       $input.appendTo(args.container);
       $input.focus().select();
     };
@@ -363,7 +396,7 @@
     };
 
     this.loadValue = function (item) {
-      defaultValue = parseFloat(item[args.column.field]);
+      defaultValue = parseFloat(item[args.column.field]) * 100;
       if (isNaN(defaultValue)) defaultValue=''; else defaultValue += ' %';
       $input.val(defaultValue);
       $input[0].defaultValue = defaultValue;
@@ -377,7 +410,7 @@
     };
 
     this.applyValue = function (item, state) {
-      item[args.column.field] = Math.round(state*1000)/10 + ' %';
+      item[args.column.field] = state;
     };
 
     this.isValueChanged = function () {
@@ -410,13 +443,14 @@
     var calendarOpen = false;
 
     this.init = function () {
+      defaultValue = '';
       $input = $("<INPUT type=text class='editor-text' />");
       $input.appendTo(args.container);
       $input.focus().select();
       $input.datepicker({
         showOn: "button",
         buttonImageOnly: true,
-        buttonImage: "../images/calendar.gif",
+        buttonImage: getHost()+"images/calendar.png",
         beforeShow: function () {
           calendarOpen = true
         },
@@ -460,18 +494,18 @@
     };
 
     this.loadValue = function (item) {
-      defaultValue = item[args.column.field];
+      defaultValue = parseISODate(item[args.column.field]);
       $input.val(defaultValue);
       $input[0].defaultValue = defaultValue;
       $input.select();
     };
 
     this.serializeValue = function () {
-      return $input.val();
+      return $input.datepicker("getDate");
     };
 
     this.applyValue = function (item, state) {
-      item[args.column.field] = state;
+      item[args.column.field] = state.format('isoDate');
     };
 
     this.isValueChanged = function () {
@@ -489,62 +523,79 @@
   }
 
 
- function SelectCellEditor(args) {
-        var $select;
-        var defaultValue;
-        var scope = this;
+  function SelectCellEditor(args) {
+     var $select;
+     var defaultValue;
+     var scope = this;
+     var opt;
 
-        this.init = function() {
-            var opt = args.column.options;
-            option_str = ""
-            for(i in opt){
-              v = opt[i];
-              option_str += "<OPTION value='"+v.key+"'>"+v.val+"</OPTION>";
-            }
-            $select = $("<SELECT tabIndex='0' class='editor-select'>"+ option_str +"</SELECT>");
-            $select.appendTo(args.container);
-            $select.focus();
-        };
+     this.init = function() {
+         defaultValue = '';
+         opt = args.metadataColumn.options || args.column.options;
+         option_str = ""
+         for(i in opt){
+           v = opt[i];
+           option_str += "<OPTION value='"+v.key+"'>"+v.val+"</OPTION>";
+         }
+         $select = $('<SELECT class="editor-select">'+ option_str +"</SELECT>");
+         $select.appendTo(args.container);
+         // $select.focus();
+         $select.multiselect({
+           autoOpen: true,
+           minWidth: $(args.container).innerWidth()-5,
+           multiple: false,
+           header: false,
+           noneSelectedText: "...",
+           classes: "editor-multiselect",
+           selectedList: 1,
+           close: function(event,ui) {
+             //args.grid.getEditorLock().commitCurrentEdit();
+           }
+         });
+     };
 
-        this.destroy = function() {
-            $select.remove();
-        };
+     this.destroy = function() {
+         $select.multiselect("destroy");
+         $select.remove();
+     };
 
-        this.focus = function() {
-            $select.focus();
-        };
+     this.focus = function() {
+         $select.focus();
+     };
 
-        this.loadValue = function(item) {
-            defaultValue = item[args.column.field];
-            $select.val(defaultValue);
-        };
+     this.loadValue = function(item) {
+         defaultValue = item[args.column.field];
+         var key = getKeyFromKeyVal(opt,defaultValue);
+         $select.val(key);
+         $select.multiselect("refresh");
+     };
 
-        this.serializeValue = function() {
-            if(args.column.options){
-              return $select.children("option:selected").text();
-            }else{
-              return ($select.val() == "yes");
-            }
-        };
+     this.serializeValue = function() {
+         if(args.metadataColumn.options || args.column.options){
+           return $select.children("option:selected").text();
+         }else{
+           return ($select.val() == "yes");
+         }
+     };
 
-        this.applyValue = function(item,state) {
-            item[args.column.field] = state;
-        };
+     this.applyValue = function(item,state) {
+         item[args.column.field] = state;
+     };
 
-        this.isValueChanged = function() {
-            return ($select.val() != defaultValue);
-        };
+     this.isValueChanged = function() {
+         return ($select.children("option:selected").text() != defaultValue);
+     };
 
-        this.validate = function() {
-            return {
-                valid: true,
-                msg: null
-            };
-        };
+     this.validate = function() {
+         return {
+             valid: true,
+             msg: null
+         };
+     };
 
-        this.init();
-    } 
-    
+     this.init();
+   }
+
   function YesNoSelectEditor(args) {
     var $select;
     var defaultValue;

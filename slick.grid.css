@@ -197,3 +197,13 @@ classes should alter those!
 	outline: 0;
 	width: 100%;
 }
+
+/* excel style right-top red triangle for comments*/
+.slick-comment {
+    position: absolute;
+    right: 0;
+    top: 0px;
+    border-left: 5px solid transparent;
+    border-top: 5px solid red;
+}
+

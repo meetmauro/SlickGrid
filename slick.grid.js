@@ -3449,6 +3449,8 @@ if (typeof Slick === "undefined") {
             if (!editor) {
                 activeCellNode[0].innerHTML = "";
             }
+            var meta = {};
+            if (data.getItemMetadata && data.getItemMetadata(activeRow) && data.getItemMetadata(activeRow).columns) meta = data.getItemMetadata(activeRow).columns[activeCell];
 
             currentEditor = new(editor || getEditor(activeRow, activeCell))({
                 grid: self,
@@ -3458,7 +3460,8 @@ if (typeof Slick === "undefined") {
                 column: columnDef,
                 item: item || {},
                 commitChanges: commitEditAndSetFocus,
-                cancelChanges: cancelEditAndSetFocus
+                cancelChanges: cancelEditAndSetFocus,
+                metadataColumn: meta
             });
 
             if (item) {
